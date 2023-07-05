@@ -175,7 +175,39 @@ class SendFile:
                     adb_path,
                     "push",
                     self.ll_path,
-                    f"/data/data/{self.package_name}/databases/WordWise.en.{self.asin}.{self.acr.replace('!', '_')}.db",
+                    f"/sdcard/WordWise.en.{self.asin}.{self.acr.replace('!', '_')}.db",
+                ]
+            )
+            run_subprocess(
+                [
+                    adb_path,
+                    "shell",
+                    "su",
+                    "-c",
+                    f"cp /sdcard/WordWise.en.{self.asin}.{self.acr.replace('!', '_')}.db /data/data/{self.package_name}/databases/WordWise.en.{self.asin}.{self.acr.replace('!', '_')}.db",
+                ]
+            )
+            result = get_andorid_folder_ownership_securirty_context(adb_path,self.package_name)
+            security_context = result.split()[4]
+            ower_info = result.split()[2]
+            run_subprocess(
+                [
+                    adb_path,
+                    "shell",
+                    "su",
+                    "-c",
+                    f"chown {ower_info}:{ower_info} /data/data/{self.package_name}/databases/WordWise.en.{self.asin}.{self.acr.replace('!', '_')}.db"
+
+                ]
+            )
+            run_subprocess(
+                [
+                    adb_path,
+                    "shell",
+                    "su",
+                    "-c",
+                    f"chcon {security_context} /data/data/{self.package_name}/databases/WordWise.en.{self.asin}.{self.acr.replace('!', '_')}.db"
+
                 ]
             )
             self.ll_path.unlink()
@@ -224,6 +256,16 @@ def get_package_name(adb_path: str) -> str | None:
         return result.split(":")[1]  # China version: com.amazon.kindlefc
     return None
 
+def get_andorid_folder_ownership_securirty_context(adb_path: str, package_name) -> str | None:
+    r = run_subprocess(
+                [
+                    adb_path, 
+                    "shell", 
+                    "su",
+                    "-c",
+                    f"ls -ldZ '/data/data/{package_name}/databases/'"])
+    result = r.stdout.decode().strip()
+    return result
 
 def copy_klld_from_android(package_name: str, dest_path: Path) -> None:
     adb_path = which_adb()
