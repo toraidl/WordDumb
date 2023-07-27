@@ -11,6 +11,7 @@ from urllib.request import urlopen
 from calibre.constants import isfrozen, ismacos, iswindows
 
 from .utils import (
+    PROFICIENCY_RELEASE_URL,
     PROFICIENCY_VERSION,
     Prefs,
     custom_lemmas_folder,
@@ -46,8 +47,11 @@ def install_deps(pkg: str, notif: Any) -> None:
         # Install X-Ray dependencies
         pip_install("rapidfuzz", dep_versions["rapidfuzz"], notif=notif)
 
-        url = f"https://github.com/explosion/spacy-models/releases/download/{pkg}-{dep_versions['spacy_model']}/{pkg}-{dep_versions['spacy_model']}-py3-none-any.whl"
-        pip_install(pkg, dep_versions["spacy_model"], url=url, notif=notif)
+        model_version = dep_versions[
+            "spacy_trf_model" if pkg.endswith("_trf") else "spacy_cpu_model"
+        ]
+        url = f"https://github.com/explosion/spacy-models/releases/download/{pkg}-{model_version}/{pkg}-{model_version}-py3-none-any.whl"
+        pip_install(pkg, model_version, url=url, notif=notif)
         if pkg.endswith("_trf"):
             from .config import prefs
 
@@ -166,16 +170,16 @@ def download_word_wise_file(
 
     extract_folder = custom_lemmas_folder(get_plugin_path())
     if not db_path.exists():
-        filename = f"wiktionary_{lemma_lang}_{gloss_lang}_v{PROFICIENCY_VERSION}.tar.gz"
+        filename = f"wiktionary_{lemma_lang}_{gloss_lang}_v{PROFICIENCY_VERSION}.bz2"
         if is_kindle and use_kindle_ww_db(lemma_lang, prefs):
-            filename = f"kindle_en_en_v{PROFICIENCY_VERSION}.tar.gz"
-        url = f"https://github.com/xxyzz/Proficiency/releases/download/v{PROFICIENCY_VERSION}/{filename}"
+            filename = f"kindle_en_en_v{PROFICIENCY_VERSION}.bz2"
+        url = f"{PROFICIENCY_RELEASE_URL}/{filename}"
         download_and_extract(url, extract_folder)
 
     if is_kindle:
         klld_path = get_wiktionary_klld_path(plugin_path, lemma_lang, gloss_lang)
         if not klld_path.exists():
-            url = f"https://github.com/xxyzz/Proficiency/releases/download/v{PROFICIENCY_VERSION}/kll.{lemma_lang}.{gloss_lang}_v{PROFICIENCY_VERSION}.klld.tar.gz"
+            url = f"{PROFICIENCY_RELEASE_URL}/kll.{lemma_lang}.{gloss_lang}_v{PROFICIENCY_VERSION}.klld.bz2"
             download_and_extract(url, extract_folder)
 
 
